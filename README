@@ -1,0 +1,11 @@
+udotool
+Copyright 2021 Elliot Wolk
+License: GPLv3 or later
+
+simple wrapper around uinput to perform some of the same functions as xdotool
+
+udotool works on SailfishOS with some work and some other limited environments
+udotool REQUIRES ROOT LEVEL ACCESS to uinput, and must be run as root on SFOS
+
+for a more robust and feature-rich xdotool replacment using uinput,
+see ydotool (a completely unrelated project, licensed under the AGPL)
