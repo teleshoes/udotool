@@ -55,6 +55,12 @@ void emitKeystroke(int uinputFD, int type, int code, int val) {
 }
 
 void typeString(int uinputFD, const char* str) {
+  emitKeystroke(uinputFD, EV_KEY, KEY_LEFTSHIFT, 1);
+  emitKeystroke(uinputFD, EV_SYN, SYN_REPORT, 0);
+
+  emitKeystroke(uinputFD, EV_KEY, KEY_LEFTSHIFT, 0);
+  emitKeystroke(uinputFD, EV_SYN, SYN_REPORT, 0);
+
   int len = strlen(str);
   for (int i = 0; i < len; i++) {
     usleep(KEYSTROKE_DELAY_MILLIS * 1000);
