@@ -7,15 +7,21 @@
 
 #include <linux/uinput.h>
 
+struct KeyCmd {
+  char* keyName;
+  bool ctrl = false;
+  bool alt = false;
+  bool super = false;
+  bool forceShift = false;
+};
+
 constexpr u_int64_t hash(const char* s, size_t index = 0);
 
 void emitKeyEvent(int uinputFD, int keyCode, bool pressed);
 void writeEvent(int uinputFD, int type, int code, int val);
 void typeString(int uinputFD, const char* str);
 void typeChar(int uinputFD, char c);
-void pressKeyName(int uinputFD, const char* keyName,
-                  bool ctrl = false, bool alt = false,
-                  bool super = false, bool forceShift = false);
+void pressKeyCmd(int uinputFD, KeyCmd keyCmd);
 char* toLower(char* str);
 
 int DEVICE_INIT_DELAY_MILLIS = 200;
@@ -200,18 +206,20 @@ void typeChar(int uinputFD, char c) {
   }
 
   if(keyName != NULL){
-    pressKeyName(uinputFD, keyName, false, false, false, false);
+    struct KeyCmd keyCmd;
+    keyCmd.keyName = strdup(keyName);
+    pressKeyCmd(uinputFD, keyCmd);
   }
 }
 
-void pressKeyName(int uinputFD, const char* keyName, bool ctrl, bool alt, bool super, bool forceShift) {
+void pressKeyCmd(int uinputFD, KeyCmd keyCmd) {
   int keyCode = -1;
   bool shift = false;
 
-  char* modKeyName = strdup(keyName);
+  char* modKeyName = keyCmd.keyName;
   //force lowercase for all except single letters
   if (strlen(modKeyName) > 1) {
-    keyName = toLower(modKeyName);
+    modKeyName = toLower(modKeyName);
   }
 
   switch(hash(modKeyName)){
@@ -340,16 +348,16 @@ void pressKeyName(int uinputFD, const char* keyName, bool ctrl, bool alt, bool s
   }
 
   if(keyCode > 0){
-    if(ctrl){
+    if(keyCmd.ctrl){
       emitKeyEvent(uinputFD, KEY_LEFTCTRL, true);
     }
-    if(alt){
+    if(keyCmd.alt){
       emitKeyEvent(uinputFD, KEY_LEFTALT, true);
     }
-    if(super){
+    if(keyCmd.super){
       emitKeyEvent(uinputFD, KEY_LEFTMETA, true); //they use meta for super instead of meta?
     }
-    if(shift || forceShift){
+    if(shift || keyCmd.forceShift){
       emitKeyEvent(uinputFD, KEY_LEFTSHIFT, true);
     }
 
@@ -357,16 +365,16 @@ void pressKeyName(int uinputFD, const char* keyName, bool ctrl, bool alt, bool s
 
     emitKeyEvent(uinputFD, keyCode, false);
 
-    if(shift || forceShift){
+    if(shift || keyCmd.forceShift){
       emitKeyEvent(uinputFD, KEY_LEFTSHIFT, false);
     }
-    if(super){
+    if(keyCmd.super){
       emitKeyEvent(uinputFD, KEY_LEFTMETA, false);
     }
-    if(alt){
+    if(keyCmd.alt){
       emitKeyEvent(uinputFD, KEY_LEFTALT, false);
     }
-    if(ctrl){
+    if(keyCmd.ctrl){
       emitKeyEvent(uinputFD, KEY_LEFTCTRL, false);
     }
   }
