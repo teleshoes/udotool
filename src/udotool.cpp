@@ -21,6 +21,7 @@ void emitKeyEvent(int uinputFD, int keyCode, bool pressed);
 void writeEvent(int uinputFD, int type, int code, int val);
 void typeString(int uinputFD, const char* str);
 void typeChar(int uinputFD, char c);
+KeyCmd extractKeyCmd(const char* keyCmdStr);
 void pressKeyCmd(int uinputFD, KeyCmd keyCmd);
 char* toLower(char* str);
 
@@ -32,10 +33,30 @@ const char* USAGE =
   "  %1$s STRING_TO_TYPE\n"
   "  %1$s type STRING_TO_TYPE\n"
   "    emit key events for every character in STRING_TO_TYPE\n"
+  "\n"
+  "  %1$s key [MODS]KEY_NAME\n"
+  "    emit KEY_CODE for KEY_NAME, after pressing any MODS,\n"
+  "      including implicit shift\n"
+  "\n"
+  "MODS\n"
+  "  ctrl+<MODS>  | ctrl+\n"
+  "    press left control key before KEY_NAME\n"
+  "  alt+<MODS>   | alt+\n"
+  "    press left alt key before KEY_NAME\n"
+  "  shift+<MODS> | shift+\n"
+  "    press left shift key before KEY_NAME, even if KEY_NAME is unshifted\n"
+  "    if KEY_NAME is already shifted, does nothing\n"
+  "  super+<MODS> | super+\n"
+  "    press left super key before KEY_NAME\n"
+  "    NOTE: uinput calls this META key, which is wrong\n"
+  "\n"
+  "KEY_NAME\n"
+  "  e.g.: 'enter', 'home', 'x', 'q'\n"
 ;
 
 int main(int argc, char *argv[]){
   const char* typeStr = NULL;
+  char* keyCmdStr = NULL;
   if(argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)){
     printf(USAGE, argv[0]);
     exit(0);
@@ -43,6 +64,8 @@ int main(int argc, char *argv[]){
     typeStr = argv[1];
   }else if(argc == 3 && strcmp(argv[1], "type") == 0) {
     typeStr = strdup(argv[2]);
+  }else if(argc == 3 && strcmp(argv[1], "key") == 0) {
+    keyCmdStr = strdup(argv[2]);
   }else{
     printf(USAGE, argv[0]);
     exit(1);
@@ -67,6 +90,9 @@ int main(int argc, char *argv[]){
 
   if (typeStr != NULL) {
     typeString(uinputFD, typeStr);
+  }
+  if (keyCmdStr != NULL) {
+    pressKeyCmd(uinputFD, extractKeyCmd(keyCmdStr));
   }
 }
 
@@ -210,6 +236,37 @@ void typeChar(int uinputFD, char c) {
     keyCmd.keyName = strdup(keyName);
     pressKeyCmd(uinputFD, keyCmd);
   }
+}
+
+KeyCmd extractKeyCmd(const char* keyCmdStr) {
+  struct KeyCmd keyCmd;
+
+  int len = strlen(keyCmdStr);
+  int start = 0;
+  for (int i=0; i<len; i++) {
+    if (keyCmdStr[i] == '+') {
+      char modName[i-start];
+      memcpy(modName, &keyCmdStr[start], i-start);
+      modName[i-start] = '\0';
+
+      if (strcmp(toLower(modName), "ctrl") == 0){
+        keyCmd.ctrl = true;
+      } else if (strcmp(toLower(modName), "alt") == 0){
+        keyCmd.alt = true;
+      } else if (strcmp(toLower(modName), "super") == 0){
+        keyCmd.super = true;
+      } else if (strcmp(toLower(modName), "shift") == 0){
+        keyCmd.forceShift = true;
+      } else {
+        printf("ERROR: unknown modified %s\n", modName);
+        exit(1);
+      }
+      start = i+1;
+    }
+  }
+
+  keyCmd.keyName = strdup(&keyCmdStr[start]);
+  return keyCmd;
 }
 
 void pressKeyCmd(int uinputFD, KeyCmd keyCmd) {
