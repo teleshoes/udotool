@@ -18,7 +18,7 @@ void pressKeyName(int uinputFD, const char* keyName,
                   bool super = false, bool forceShift = false);
 char* toLower(char* str);
 
-int DEVICE_INIT_DELAY_MILLIS = 1000;
+int DEVICE_INIT_DELAY_MILLIS = 200;
 int KEYSTROKE_DELAY_MILLIS = 10;
 
 int main(int argc, char *argv[]){
