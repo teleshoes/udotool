@@ -21,13 +21,26 @@ char* toLower(char* str);
 int DEVICE_INIT_DELAY_MILLIS = 200;
 int KEYSTROKE_DELAY_MILLIS = 10;
 
+const char* USAGE =
+  "Usage:\n"
+  "  %1$s STRING_TO_TYPE\n"
+  "  %1$s type STRING_TO_TYPE\n"
+  "    emit key events for every character in STRING_TO_TYPE\n"
+;
+
 int main(int argc, char *argv[]){
-  if(argc != 2 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0){
-    printf("USAGE: %s STRING_TO_TYPE\n", argv[0]);
+  const char* typeStr = NULL;
+  if(argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)){
+    printf(USAGE, argv[0]);
+    exit(0);
+  }else if(argc == 2) {
+    typeStr = argv[1];
+  }else if(argc == 3 && strcmp(argv[1], "type") == 0) {
+    typeStr = strdup(argv[2]);
+  }else{
+    printf(USAGE, argv[0]);
     exit(1);
   }
-
-  const char* str = argv[1];
 
   struct uinput_user_dev uinputDev;
 
@@ -46,7 +59,9 @@ int main(int argc, char *argv[]){
 
   usleep(DEVICE_INIT_DELAY_MILLIS * 1000);
 
-  typeString(uinputFD, str);
+  if (typeStr != NULL) {
+    typeString(uinputFD, typeStr);
+  }
 }
 
 constexpr u_int64_t hash(const char* s, size_t index) {
