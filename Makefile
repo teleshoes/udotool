@@ -1,6 +1,6 @@
 TARGET = udotool
 
-CC = gcc
+CC = g++
 CFLAGS = -Wall
 
 PREFIX = /usr/local
